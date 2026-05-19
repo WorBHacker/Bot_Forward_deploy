@@ -1,0 +1,32 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: botf_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: botuser
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: botf_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U botuser -d botf_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  bot:
+    build: .
+    container_name: botf_bot
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    volumes:
+      - torch_cache:/root/.cache
+
+volumes:
+  postgres_data:
+  torch_cache:
